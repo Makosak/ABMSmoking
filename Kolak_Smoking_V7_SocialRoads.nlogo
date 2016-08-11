@@ -1,6 +1,7 @@
 
 globals [
          ;; # of decays during this tick
+number-retail
 ]             
 
 
@@ -24,12 +25,15 @@ turtles-own [
 
 to setup
   clear-all
-
+  
+  ;make-zone
+  color-patches
+  
   create-turtles number-people [           ;; original has 5,000 persons
-    set size 1
+    set size 5
     set shape "person"
-    set xcor random 30 
-    set ycor random 30
+    set xcor random 500 
+    set ycor random 500
     face one-of neighbors4 
     ;pen-down
     
@@ -80,6 +84,10 @@ to go
       
       peer-pressure 
       
+      advertiseSmoke
+      
+      noSmokeZone
+      
       if satiation? = 0              ;; if craving, make a decision
       [  decide  ]
         
@@ -97,12 +105,16 @@ to go
 end
 
 
+;;;;;;;;;;;;;;;;;;;;;;
+;; Turtle Procedures ;;
+;;;;;;;;;;;;;;;;;;;;;;
+
 to peer-pressure  ;; turtle procedure
    let nearby-smokers (turtles-on neighbors)
      with [ rd > 0.0 ]
 
      if nearby-smokers != nobody
-     [ set rD rD + (rD * bD) ]   ;; increase probability of smoking
+     [ set rD rD + (rD * peerP) ]   ;; increase probability of smoking
 end
 
 to support  ;; turtle procedure
@@ -113,6 +125,20 @@ to support  ;; turtle procedure
      [ set rD rD - (rD * (random-float 1.0 ))]  ;; decrease probability of smoking
 end
 
+
+to advertiseSmoke ;; turtle procedure
+  let P patches in-radius 3
+  if [pcolor] of P = red
+  [ set rD rD + (rD * adP) ]
+end
+
+to noSmokeZone ;; turtle procedure
+  let P patches in-radius 3
+  if [pcolor] of P = green
+  [ set rD rD - (rD * healthP) ]
+end
+
+
 to decide
       if random-gamma 2 0.25 < rD  ;; if agent smokes, turns yellow, start decay
           [ 
@@ -121,8 +147,12 @@ to decide
           set decays decays + 1 
           set rD random-gamma 2 0.25]   ;; reset smoking parameter
 end
-          
 
+
+;;;;;;;;;;;;;;;;;;;;;;
+;; Walk Procedures ;;
+;;;;;;;;;;;;;;;;;;;;;;
+          
 
 to walk1
     face one-of neighbors4              ;; face N, E, S, or W
@@ -139,16 +169,87 @@ to wander
   fd 1
 end
 
+to walk110
+    face one-of neighbors4              ;; face N, E, S, or W
+    forward 10                           ;; advance one step
+end
 
+to walk210
+    rt one-of [-90 0 90]                ;; go left, straight, or right
+    forward 10                           ;; advance one step
+end
+
+to wander10
+  rt random-float 360
+  fd 10
+end
+
+
+;;;;;;;;;;;;;;;;;;;;;;
+;; Patch Procedures ;;
+;;;;;;;;;;;;;;;;;;;;;;
+
+to make-zone  
+
+  let ycounter random-ycor
+  let zone-color red 
+  
+  
+  while [ ycounter < max-pycor - 60 ] [
+    
+    ; do the west side
+    set zone-color one-of [ red green ]
+    ask patches with [ pxcor > 50 and pxcor < 60 and pycor > ycounter and pycor < ycounter + 10 ] 
+    [
+      ; In this part we can decide what color we would like to make each set of patches
+      ; (i.e. each individual zone). Randomly assign to a zone type, e.g. tobacco retail or health zone
+      set pcolor zone-color
+    ] ; ask
+    
+    ; do the same thing for the east side
+    set zone-color one-of [ red green ]
+    ask patches with [ pxcor > max-pxcor - 100 and pxcor < max-pxcor - 50 and pycor > ycounter and pycor < ycounter + 50] [
+      set pcolor zone-color
+    ]; ask
+    
+    
+    set ycounter ( ycounter + 100 )
+  ] ; while  
+  
+  end
+
+
+to color-patches 
+  let total SmokeZone + HealthZone + 0.90
+  let p-red   SmokeZone / (total)
+  let p-green HealthZone / (total)
+
+
+  ask patches [
+    let x random-float 1.0
+    if x <= p-red + p-green + 0.90 [set pcolor black]
+    if x <= p-red + p-green [set pcolor green]
+    if x <= p-red [set pcolor red]
+  ]
+end
+
+
+;;;;;;;;;;;;;;;;;;;;;;
+;; Report Procedures ;;
+;;;;;;;;;;;;;;;;;;;;;;
+
+to-report smkPerc 
+  report (count turtles with [ satiation? = 1] / ( (count turtles with [ satiation? = 1])+ (count turtles with [ color = red]))) * 100
+end
 @#$#@#$#@
 GRAPHICS-WINDOW
-299
-12
-787
-521
+205
+10
+1991
+1817
 -1
 -1
-15.42
+3.545
 1
 10
 1
@@ -159,9 +260,9 @@ GRAPHICS-WINDOW
 1
 1
 0
-30
+500
 0
-30
+500
 0
 0
 1
@@ -169,10 +270,10 @@ ticks
 30.0
 
 BUTTON
-43
-34
-109
-67
+13
+30
+104
+63
 NIL
 setup\n
 NIL
@@ -186,10 +287,10 @@ NIL
 1
 
 SLIDER
-46
-237
-218
-270
+14
+145
+186
+178
 pA
 pA
 0
@@ -201,45 +302,45 @@ NIL
 HORIZONTAL
 
 SLIDER
-44
-319
-216
-352
-bD
-bD
+12
+227
+184
+260
+peerP
+peerP
 0
-0.50
+1.0
 0.5
-0.05
+0.1
 1
 NIL
 HORIZONTAL
 
 TEXTBOX
-46
-204
-251
-246
+14
+112
+219
+154
 pA: probability that individual abstains from smoking.
 11
 0.0
 1
 
 TEXTBOX
-45
-288
-218
-330
-bD: rate parameter affecting influence of nearby smokers
+13
+196
+186
+238
+peerP: rate parameter affecting influence of nearby smokers
 11
 0.0
 1
 
 BUTTON
-139
-35
-202
-68
+106
+30
+184
+63
 NIL
 go
 T
@@ -253,47 +354,32 @@ NIL
 1
 
 SLIDER
-46
-142
-218
-175
-number-retail
-number-retail
+12
+68
+184
+101
+number-people
+number-people
 0
-10
-5
-1
-1
-NIL
-HORIZONTAL
-
-SLIDER
-45
+2000
+1500
 100
-217
-133
-number-people
-number-people
-0
-500
-50
-10
 1
 NIL
 HORIZONTAL
 
 PLOT
-49
-377
-249
-527
+817
+385
+1128
+621
 World % Smoking Now 
 time
 percent
 0.0
 5.0
 0.0
-50.0
+20.0
 true
 false
 "" ""
@@ -303,12 +389,12 @@ PENS
 PLOT
 815
 14
-1015
-164
+1091
+183
 Mean Probability of Smoking
 NIL
 NIL
-0.0
+0.01
 10.0
 0.0
 10.0
@@ -323,9 +409,9 @@ MONITOR
 193
 1089
 238
-Of Smokers, Ratio Not Smoking :  Smoking
-count turtles with [ satiation? = 1] / ( (count turtles with [ satiation? = 1])+ (count turtles with [ color = red]))
-17
+% Smokers Smoking
+(count turtles with [ satiation? = 1] / ( (count turtles with [ satiation? = 1])+ (count turtles with [ color = red]))) * 100
+2
 1
 11
 
@@ -335,8 +421,8 @@ MONITOR
 1003
 297
 Mean Probability of Smoking
-( mean [rD] of turtles )
-17
+(( mean [rD] of turtles )) * 100
+2
 1
 11
 
@@ -347,9 +433,122 @@ MONITOR
 370
 hours
 ticks / 60
+2
+1
+11
+
+MONITOR
+943
+327
+1090
+372
+World % Smoking Now
+(sum [ satiation? ] of turtles / number-people) * 100
+2
+1
+11
+
+SLIDER
+11
+285
+183
+318
+adP
+adP
+0
+1.0
+0.6
+0.1
+1
+NIL
+HORIZONTAL
+
+SLIDER
+11
+346
+183
+379
+healthP
+healthP
+0
+1.0
+0.6
+0.1
+1
+NIL
+HORIZONTAL
+
+MONITOR
+11
+394
+99
+439
+Smoke Zone
+count turtles with [pcolor = red]
 17
 1
 11
+
+SLIDER
+11
+454
+190
+487
+SmokeZone
+SmokeZone
+0
+0.10
+0.1
+0.01
+1
+NIL
+HORIZONTAL
+
+SLIDER
+12
+498
+189
+531
+HealthZone
+HealthZone
+0
+0.1
+0.01
+0.01
+1
+NIL
+HORIZONTAL
+
+MONITOR
+105
+394
+192
+439
+Health Zone
+count turtles with [pcolor = green]
+17
+1
+11
+
+TEXTBOX
+13
+268
+194
+296
+adP: influence of tobacco retail\n
+11
+0.0
+1
+
+TEXTBOX
+12
+328
+193
+356
+healthP: influence of health zone
+11
+0.0
+1
 
 @#$#@#$#@
 ## WHAT IS IT?
@@ -698,6 +897,89 @@ NetLogo 5.0.4
 @#$#@#$#@
 @#$#@#$#@
 @#$#@#$#@
+<experiments>
+  <experiment name="Influence-Ad" repetitions="10" runMetricsEveryStep="false">
+    <setup>setup</setup>
+    <go>go</go>
+    <timeLimit steps="500"/>
+    <metric>count turtles</metric>
+    <metric>smkPerc</metric>
+    <metric>mean [rD] of turtles</metric>
+    <enumeratedValueSet variable="number-people">
+      <value value="1500"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="pA">
+      <value value="0.8"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="peerP">
+      <value value="0.1"/>
+    </enumeratedValueSet>
+    <steppedValueSet variable="adP" first="0" step="0.1" last="1"/>
+    <enumeratedValueSet variable="healthP">
+      <value value="0.1"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="HealthZone">
+      <value value="0.05"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="SmokeZone">
+      <value value="0.05"/>
+    </enumeratedValueSet>
+  </experiment>
+  <experiment name="SmokeZone" repetitions="10" runMetricsEveryStep="false">
+    <setup>setup</setup>
+    <go>go</go>
+    <timeLimit steps="500"/>
+    <metric>count turtles</metric>
+    <metric>smkPerc</metric>
+    <metric>mean [rD] of turtles</metric>
+    <enumeratedValueSet variable="pA">
+      <value value="0.8"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="number-people">
+      <value value="1500"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="adP">
+      <value value="0.6"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="healthP">
+      <value value="0.6"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="peerP">
+      <value value="0.5"/>
+    </enumeratedValueSet>
+    <steppedValueSet variable="HealthZone" first="0" step="0.01" last="0.1"/>
+    <enumeratedValueSet variable="SmokeZone">
+      <value value="0.01"/>
+    </enumeratedValueSet>
+  </experiment>
+  <experiment name="HealthZone" repetitions="10" runMetricsEveryStep="false">
+    <setup>setup</setup>
+    <go>go</go>
+    <timeLimit steps="500"/>
+    <metric>count turtles</metric>
+    <metric>smkPerc</metric>
+    <metric>mean [rD] of turtles</metric>
+    <enumeratedValueSet variable="pA">
+      <value value="0.8"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="number-people">
+      <value value="1500"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="adP">
+      <value value="0.6"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="healthP">
+      <value value="0.6"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="peerP">
+      <value value="0.5"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="HealthZone">
+      <value value="0.01"/>
+    </enumeratedValueSet>
+    <steppedValueSet variable="SmokeZone" first="0" step="0.01" last="0.1"/>
+  </experiment>
+</experiments>
 @#$#@#$#@
 @#$#@#$#@
 default
