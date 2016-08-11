@@ -14,24 +14,24 @@ Agents:
 *Environment (abstractions of built and social environment) 
 
 Actions:
-*Smoke
-*Do not smoke
+⋅⋅* Smoke
+⋅⋅* Do not smoke
 
 Individual-Environment interactions across space and time, with outcome testing: 
 High risk of relapse/smoking:
-*Storefront tobacco advertising (built environment)
-*Nearby individuals are relapsing/smoking (social environment) 
+⋅⋅* Storefront tobacco advertising (built environment)
+⋅⋅* Nearby individuals are relapsing/smoking (social environment) 
 
 Low risk of relapse/smoking:
-*Designated tobacco-free zones (built environment) 
-*Anti-tobacco marketing (built environment) 
+⋅⋅* Designated tobacco-free zones (built environment) 
+⋅⋅* Anti-tobacco marketing (built environment) 
 
 ## Landscape: 
 Representation as 2D Euclidean space with different types/patches: 
-*Tobacco vendors, high risk marketing (single red pixel) 
-*Anti-tobacco marketing, low risk (single green pixel) 
-*Tobacco-free zones (multiple red pixels) 
-*Green spaces, such as parks (multiple green pixels) 
+⋅⋅* Tobacco vendors, high risk marketing (single red pixel) 
+⋅⋅* Anti-tobacco marketing, low risk (single green pixel) 
+⋅⋅* Tobacco-free zones (multiple red pixels) 
+⋅⋅* Green spaces, such as parks (multiple green pixels) 
 
 ### Process overview and scheduling
 For every tick,  smokers go through the following process. First, the decay rate for craving is increased by one. Then, the go through multiple influences: support of nearby abstainers (reduce craving); peer-pressure of nearby smokers (increase craving); peer-pressure of tobacco advertising (increase craving); and support of health zones or public health advertising (decrease craving). Then, if smoker is craving, they make a decision to smoke or not. After several ticks or 10 minutes and not smoking, the smoker will start craving and have their rate reset. This process is repeated until 1440 ticks are reached, and then the model is stopped.
